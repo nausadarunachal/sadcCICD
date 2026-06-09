@@ -55,17 +55,29 @@ jobs:
             --results-dir coverage \
             --wait 30
 
-      - name: Show Apex coverage details
+      - name: Show Apex test and coverage details
         if: always()
         run: |
-          echo "Coverage files:"
-          find coverage -type f || true
-
+          echo "========== TEST RESULTS =========="
+          echo ""
           echo "Coverage summary:"
-          cat coverage/coverage/coverage-summary.json || true
-
-          echo "Detailed coverage:"
-          cat coverage/coverage/coverage-final.json || true
+          if [ -f coverage/coverage/coverage-summary.json ]; then
+            cat coverage/coverage/coverage-summary.json | jq .
+          else
+            echo "No coverage summary found"
+          fi
+          
+          echo ""
+          echo "Detailed coverage by class:"
+          if [ -f coverage/coverage/coverage-final.json ]; then
+            cat coverage/coverage/coverage-final.json | jq '.[] | {file: .path, lines: .lines, statements: .statements, functions: .functions, branches: .branches}'
+          else
+            echo "No detailed coverage found"
+          fi
+          
+          echo ""
+          echo "Test result files:"
+          find coverage -type f -name "*" -exec ls -lah {} \;
 
       - name: Deploy to Dev
         run: |
@@ -128,17 +140,29 @@ jobs:
             --results-dir coverage \
             --wait 30
 
-      - name: Show Apex coverage details
+      - name: Show Apex test and coverage details
         if: always()
         run: |
-          echo "Coverage files:"
-          find coverage -type f || true
-
+          echo "========== TEST RESULTS =========="
+          echo ""
           echo "Coverage summary:"
-          cat coverage/coverage/coverage-summary.json || true
-
-          echo "Detailed coverage:"
-          cat coverage/coverage/coverage-final.json || true
+          if [ -f coverage/coverage/coverage-summary.json ]; then
+            cat coverage/coverage/coverage-summary.json | jq .
+          else
+            echo "No coverage summary found"
+          fi
+          
+          echo ""
+          echo "Detailed coverage by class:"
+          if [ -f coverage/coverage/coverage-final.json ]; then
+            cat coverage/coverage/coverage-final.json | jq '.[] | {file: .path, lines: .lines, statements: .statements, functions: .functions, branches: .branches}'
+          else
+            echo "No detailed coverage found"
+          fi
+          
+          echo ""
+          echo "Test result files:"
+          find coverage -type f -name "*" -exec ls -lah {} \;
 
       - name: Deploy to QA
         run: |
