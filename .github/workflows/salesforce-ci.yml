@@ -50,7 +50,22 @@ jobs:
             --target-org dev-org \
             --test-level RunLocalTests \
             --coverage-formatters text-summary \
+            --coverage-formatters json-summary \
+            --coverage-formatters json \
+            --results-dir coverage \
             --wait 30
+
+      - name: Show Apex coverage details
+        if: always()
+        run: |
+          echo "Coverage files:"
+          find coverage -type f || true
+
+          echo "Coverage summary:"
+          cat coverage/coverage/coverage-summary.json || true
+
+          echo "Detailed coverage:"
+          cat coverage/coverage/coverage-final.json || true
 
       - name: Deploy to Dev
         run: |
@@ -59,7 +74,19 @@ jobs:
             --target-org dev-org \
             --test-level RunLocalTests \
             --coverage-formatters text-summary \
+            --coverage-formatters json-summary \
+            --coverage-formatters json \
+            --results-dir coverage-deploy \
             --wait 30
+
+      - name: Upload Dev coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-apex-coverage
+          path: |
+            coverage
+            coverage-deploy
 
   deploy-qa:
     name: Validate, Test, and Deploy to QA
@@ -96,7 +123,22 @@ jobs:
             --target-org qa-org \
             --test-level RunLocalTests \
             --coverage-formatters text-summary \
+            --coverage-formatters json-summary \
+            --coverage-formatters json \
+            --results-dir coverage \
             --wait 30
+
+      - name: Show Apex coverage details
+        if: always()
+        run: |
+          echo "Coverage files:"
+          find coverage -type f || true
+
+          echo "Coverage summary:"
+          cat coverage/coverage/coverage-summary.json || true
+
+          echo "Detailed coverage:"
+          cat coverage/coverage/coverage-final.json || true
 
       - name: Deploy to QA
         run: |
@@ -105,4 +147,16 @@ jobs:
             --target-org qa-org \
             --test-level RunLocalTests \
             --coverage-formatters text-summary \
+            --coverage-formatters json-summary \
+            --coverage-formatters json \
+            --results-dir coverage-deploy \
             --wait 30
+
+      - name: Upload QA coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-apex-coverage
+          path: |
+            coverage
+            coverage-deploy
