@@ -58,26 +58,28 @@ jobs:
       - name: Show Apex test and coverage details
         if: always()
         run: |
-          echo "========== TEST RESULTS =========="
-          echo ""
-          echo "Coverage summary:"
+          echo "========== COVERAGE SUMMARY =========="
           if [ -f coverage/coverage/coverage-summary.json ]; then
-            cat coverage/coverage/coverage-summary.json | jq .
+            cat coverage/coverage/coverage-summary.json | jq '.' || cat coverage/coverage/coverage-summary.json
           else
             echo "No coverage summary found"
           fi
           
           echo ""
-          echo "Detailed coverage by class:"
-          if [ -f coverage/coverage/coverage-final.json ]; then
-            cat coverage/coverage/coverage-final.json | jq '.[] | {file: .path, lines: .lines, statements: .statements, functions: .functions, branches: .branches}'
+          echo "========== CLASSES WITH INSUFFICIENT COVERAGE =========="
+          if [ -f coverage/coverage/coverage-summary.json ]; then
+            jq -r 'to_entries[] | select(.value.lines.pct < 75) | "  - \(.key): \(.value.lines.pct)% coverage (\(.value.lines.covered)/\(.value.lines.total) lines)"' coverage/coverage/coverage-summary.json 2>/dev/null || echo "Unable to parse coverage data"
           else
-            echo "No detailed coverage found"
+            echo "No coverage data available"
           fi
           
           echo ""
-          echo "Test result files:"
-          find coverage -type f -name "*" -exec ls -lah {} \;
+          echo "========== COVERAGE TEXT SUMMARY =========="
+          if [ -f coverage/coverage/text-summary.txt ]; then
+            cat coverage/coverage/text-summary.txt
+          else
+            echo "No text summary available"
+          fi
 
       - name: Deploy to Dev
         run: |
@@ -143,26 +145,28 @@ jobs:
       - name: Show Apex test and coverage details
         if: always()
         run: |
-          echo "========== TEST RESULTS =========="
-          echo ""
-          echo "Coverage summary:"
+          echo "========== COVERAGE SUMMARY =========="
           if [ -f coverage/coverage/coverage-summary.json ]; then
-            cat coverage/coverage/coverage-summary.json | jq .
+            cat coverage/coverage/coverage-summary.json | jq '.' || cat coverage/coverage/coverage-summary.json
           else
             echo "No coverage summary found"
           fi
           
           echo ""
-          echo "Detailed coverage by class:"
-          if [ -f coverage/coverage/coverage-final.json ]; then
-            cat coverage/coverage/coverage-final.json | jq '.[] | {file: .path, lines: .lines, statements: .statements, functions: .functions, branches: .branches}'
+          echo "========== CLASSES WITH INSUFFICIENT COVERAGE =========="
+          if [ -f coverage/coverage/coverage-summary.json ]; then
+            jq -r 'to_entries[] | select(.value.lines.pct < 75) | "  - \(.key): \(.value.lines.pct)% coverage (\(.value.lines.covered)/\(.value.lines.total) lines)"' coverage/coverage/coverage-summary.json 2>/dev/null || echo "Unable to parse coverage data"
           else
-            echo "No detailed coverage found"
+            echo "No coverage data available"
           fi
           
           echo ""
-          echo "Test result files:"
-          find coverage -type f -name "*" -exec ls -lah {} \;
+          echo "========== COVERAGE TEXT SUMMARY =========="
+          if [ -f coverage/coverage/text-summary.txt ]; then
+            cat coverage/coverage/text-summary.txt
+          else
+            echo "No text summary available"
+          fi
 
       - name: Deploy to QA
         run: |
