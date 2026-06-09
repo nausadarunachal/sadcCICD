@@ -57,8 +57,7 @@ jobs:
 
       - name: Show Apex test and coverage details
         if: always()
-        run: |
-          echo "========== COVERAGE SUMMARY ==========" 
+        run: |          
           echo ""
           echo "========== CLASSES WITH INSUFFICIENT COVERAGE =========="
           if [ -f coverage/coverage/coverage-summary.json ]; then
@@ -139,7 +138,6 @@ jobs:
       - name: Show Apex test and coverage details
         if: always()
         run: |
-          echo "========== COVERAGE SUMMARY ==========" 
           echo ""
           echo "========== CLASSES WITH INSUFFICIENT COVERAGE =========="
           if [ -f coverage/coverage/coverage-summary.json ]; then
