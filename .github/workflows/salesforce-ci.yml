@@ -5,9 +5,19 @@ on:
     branches:
       - main
 
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: "Choose target environment for manual deployment"
+        required: true
+        type: choice
+        options:
+          - qa
+
 jobs:
-  validate:
-    name: Validate and Run Apex Tests
+  deploy-dev:
+    name: Validate, Test, and Deploy to Dev
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: dev
 
@@ -39,35 +49,33 @@ jobs:
             --source-dir force-app \
             --target-org dev-org \
             --test-level RunLocalTests \
+            --coverage-formatters text-summary \
             --wait 30
 
-  deploy-dev:
-    name: Deploy to Dev
-    needs: validate
-    runs-on: ubuntu-latest
-    environment: dev
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Install Salesforce CLI
+      - name: Check Apex coverage is at least 75 percent
         run: |
-          npm install --global @salesforce/cli
-          sf --version
+          sf data query \
+            --target-org dev-org \
+            --use-tooling-api \
+            --query "SELECT PercentCovered FROM ApexOrgWideCoverage" \
+            --json > coverage.json
 
-      - name: Create JWT key file
-        run: |
-          echo "${{ secrets.SF_JWT_KEY }}" > server.key
-
-      - name: Authenticate to Dev Salesforce
-        run: |
-          sf org login jwt \
-            --client-id "${{ secrets.SF_CLIENT_ID }}" \
-            --jwt-key-file server.key \
-            --username "${{ secrets.SF_USERNAME }}" \
-            --instance-url "${{ secrets.SF_INSTANCE_URL }}" \
-            --alias dev-org
+          node -e "
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('coverage.json', 'utf8'));
+          const records = data.result && data.result.records ? data.result.records : [];
+          if (!records.length) {
+            console.error('Could not read ApexOrgWideCoverage from Salesforce.');
+            process.exit(1);
+          }
+          const coverage = Number(records[0].PercentCovered);
+          console.log('Apex Org-Wide Coverage: ' + coverage + '%');
+          if (coverage < 75) {
+            console.error('Deployment stopped. Apex coverage is below 75%.');
+            process.exit(1);
+          }
+          console.log('Coverage check passed.');
+          "
 
       - name: Deploy to Dev
         run: |
@@ -75,11 +83,12 @@ jobs:
             --source-dir force-app \
             --target-org dev-org \
             --test-level RunLocalTests \
+            --coverage-formatters text-summary \
             --wait 30
 
   deploy-qa:
-    name: Deploy to QA
-    needs: deploy-dev
+    name: Validate, Test, and Deploy to QA
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.target_environment == 'qa'
     runs-on: ubuntu-latest
     environment: qa
 
@@ -105,10 +114,45 @@ jobs:
             --instance-url "${{ secrets.SF_INSTANCE_URL }}" \
             --alias qa-org
 
+      - name: Validate deployment and run Apex tests
+        run: |
+          sf project deploy validate \
+            --source-dir force-app \
+            --target-org qa-org \
+            --test-level RunLocalTests \
+            --coverage-formatters text-summary \
+            --wait 30
+
+      - name: Check Apex coverage is at least 75 percent
+        run: |
+          sf data query \
+            --target-org qa-org \
+            --use-tooling-api \
+            --query "SELECT PercentCovered FROM ApexOrgWideCoverage" \
+            --json > coverage.json
+
+          node -e "
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('coverage.json', 'utf8'));
+          const records = data.result && data.result.records ? data.result.records : [];
+          if (!records.length) {
+            console.error('Could not read ApexOrgWideCoverage from Salesforce.');
+            process.exit(1);
+          }
+          const coverage = Number(records[0].PercentCovered);
+          console.log('Apex Org-Wide Coverage: ' + coverage + '%');
+          if (coverage < 75) {
+            console.error('Deployment stopped. Apex coverage is below 75%.');
+            process.exit(1);
+          }
+          console.log('Coverage check passed.');
+          "
+
       - name: Deploy to QA
         run: |
           sf project deploy start \
             --source-dir force-app \
             --target-org qa-org \
             --test-level RunLocalTests \
+            --coverage-formatters text-summary \
             --wait 30
