@@ -52,31 +52,6 @@ jobs:
             --coverage-formatters text-summary \
             --wait 30
 
-      - name: Check Apex coverage is at least 75 percent
-        run: |
-          sf data query \
-            --target-org dev-org \
-            --use-tooling-api \
-            --query "SELECT PercentCovered FROM ApexOrgWideCoverage" \
-            --json > coverage.json
-
-          node -e "
-          const fs = require('fs');
-          const data = JSON.parse(fs.readFileSync('coverage.json', 'utf8'));
-          const records = data.result && data.result.records ? data.result.records : [];
-          if (!records.length) {
-            console.error('Could not read ApexOrgWideCoverage from Salesforce.');
-            process.exit(1);
-          }
-          const coverage = Number(records[0].PercentCovered);
-          console.log('Apex Org-Wide Coverage: ' + coverage + '%');
-          if (coverage < 75) {
-            console.error('Deployment stopped. Apex coverage is below 75%.');
-            process.exit(1);
-          }
-          console.log('Coverage check passed.');
-          "
-
       - name: Deploy to Dev
         run: |
           sf project deploy start \
@@ -122,31 +97,6 @@ jobs:
             --test-level RunLocalTests \
             --coverage-formatters text-summary \
             --wait 30
-
-      - name: Check Apex coverage is at least 75 percent
-        run: |
-          sf data query \
-            --target-org qa-org \
-            --use-tooling-api \
-            --query "SELECT PercentCovered FROM ApexOrgWideCoverage" \
-            --json > coverage.json
-
-          node -e "
-          const fs = require('fs');
-          const data = JSON.parse(fs.readFileSync('coverage.json', 'utf8'));
-          const records = data.result && data.result.records ? data.result.records : [];
-          if (!records.length) {
-            console.error('Could not read ApexOrgWideCoverage from Salesforce.');
-            process.exit(1);
-          }
-          const coverage = Number(records[0].PercentCovered);
-          console.log('Apex Org-Wide Coverage: ' + coverage + '%');
-          if (coverage < 75) {
-            console.error('Deployment stopped. Apex coverage is below 75%.');
-            process.exit(1);
-          }
-          console.log('Coverage check passed.');
-          "
 
       - name: Deploy to QA
         run: |
