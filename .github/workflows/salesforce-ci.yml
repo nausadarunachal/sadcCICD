@@ -5,19 +5,9 @@ on:
     branches:
       - main
 
-  workflow_dispatch:
-    inputs:
-      target_environment:
-        description: "Choose target environment for manual deployment"
-        required: true
-        type: choice
-        options:
-          - qa
-
 jobs:
   deploy-dev:
     name: Validate, Test, and Deploy to Dev
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: dev
 
@@ -57,7 +47,7 @@ jobs:
 
       - name: Show Apex test and coverage details
         if: always()
-        run: |          
+        run: |
           echo ""
           echo "========== CLASSES WITH INSUFFICIENT COVERAGE =========="
           if [ -f coverage/coverage/coverage-summary.json ]; then
@@ -65,7 +55,7 @@ jobs:
           else
             echo "No coverage data available"
           fi
-          
+
           echo ""
           echo "========== COVERAGE TEXT SUMMARY =========="
           if [ -f coverage/coverage/text-summary.txt ]; then
@@ -96,8 +86,8 @@ jobs:
             coverage-deploy
 
   deploy-qa:
-    name: Validate, Test, and Deploy to QA
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.target_environment == 'qa'
+    name: Deploy to QA
+    needs: deploy-dev
     runs-on: ubuntu-latest
     environment: qa
 
@@ -132,24 +122,24 @@ jobs:
             --coverage-formatters text-summary \
             --coverage-formatters json-summary \
             --coverage-formatters json \
-            --results-dir coverage \
+            --results-dir qa-coverage \
             --wait 30
 
-      - name: Show Apex test and coverage details
+      - name: Show QA Apex test and coverage details
         if: always()
         run: |
           echo ""
-          echo "========== CLASSES WITH INSUFFICIENT COVERAGE =========="
-          if [ -f coverage/coverage/coverage-summary.json ]; then
-            jq -r 'to_entries[] | select(.value.lines.pct < 75) | "  - \(.key): \(.value.lines.pct)% coverage (\(.value.lines.covered)/\(.value.lines.total) lines)"' coverage/coverage/coverage-summary.json 2>/dev/null || echo "Unable to parse coverage data"
+          echo "========== QA CLASSES WITH INSUFFICIENT COVERAGE =========="
+          if [ -f qa-coverage/coverage/coverage-summary.json ]; then
+            jq -r 'to_entries[] | select(.value.lines.pct < 75) | "  - \(.key): \(.value.lines.pct)% coverage (\(.value.lines.covered)/\(.value.lines.total) lines)"' qa-coverage/coverage/coverage-summary.json 2>/dev/null || echo "Unable to parse coverage data"
           else
             echo "No coverage data available"
           fi
-          
+
           echo ""
-          echo "========== COVERAGE TEXT SUMMARY =========="
-          if [ -f coverage/coverage/text-summary.txt ]; then
-            cat coverage/coverage/text-summary.txt
+          echo "========== QA COVERAGE TEXT SUMMARY =========="
+          if [ -f qa-coverage/coverage/text-summary.txt ]; then
+            cat qa-coverage/coverage/text-summary.txt
           else
             echo "No text summary available"
           fi
@@ -163,7 +153,7 @@ jobs:
             --coverage-formatters text-summary \
             --coverage-formatters json-summary \
             --coverage-formatters json \
-            --results-dir coverage-deploy \
+            --results-dir qa-coverage-deploy \
             --wait 30
 
       - name: Upload QA coverage artifacts
@@ -172,5 +162,5 @@ jobs:
         with:
           name: qa-apex-coverage
           path: |
-            coverage
-            coverage-deploy
+            qa-coverage
+            qa-coverage-deploy
