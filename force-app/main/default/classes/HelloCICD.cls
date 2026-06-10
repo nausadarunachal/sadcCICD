@@ -3,7 +3,7 @@ public with sharing class HelloCICD {
         //test
         return 'Hello from CI/CD POC';
     }
-   
+   /*
     public static String getGreeting(String name) {
         return 'Hello, ' + name;
     }
@@ -18,5 +18,5 @@ public with sharing class HelloCICD {
     
     public static String formatMessage(String msg) {
         return 'Message: ' + msg.toUpperCase();
-    }
+    }*/
 }
