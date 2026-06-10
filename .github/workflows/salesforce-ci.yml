@@ -177,7 +177,7 @@ jobs:
             qa-coverage-deploy
 
   deploy-sandbox:
-    name: Deploy to Sandbox - ${{ inputs.target_sandbox }}
+    name: Deploy to Sandbox${{ inputs.target_sandbox && format(' - {0}', inputs.target_sandbox) || '' }}
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: ${{ inputs.target_sandbox }}
