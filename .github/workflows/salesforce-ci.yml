@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       target_sandbox:
-        description: "Type sandbox name exactly, e.g. dev-pavani, devpak, devnau"
+        description: "Select target sandbox/environment"
         required: true
-        type: string
+        type: environment
 
 jobs:
   deploy-dev:
